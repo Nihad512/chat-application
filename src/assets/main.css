@@ -1,0 +1,33 @@
+@import './base.css';
+
+.flex{
+    display: flex;
+}
+.justify_center{
+    justify-content: center;
+}
+.justify_between{
+    justify-content: space-between;
+}
+.align_center{
+    align-items: center;
+}
+.direction_column{
+    flex-direction: column;
+}
+span{
+    display: inline-block;
+}
+.full_width{
+    width: 100%;
+    float: left;
+}
+.full_height{
+    height: 100%;
+}
+.direction_row{
+    flex-direction: row;
+}
+body{
+    background: #070707;
+}
