@@ -2,7 +2,7 @@
 import Users from './Users.vue';
 import { useRoute,useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { collection,query,limit,getDocs, where,doc,setDoc } from 'firebase/firestore';
+import { collection,query,limit,getDocs, where,doc,setDoc, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/init'
 const  route=useRoute();
 const router=useRouter()
@@ -38,6 +38,7 @@ const createConversations = async (avalibleUser) => {
     const querySnap = await getDocs(q)
 
     if(querySnap.docs.length!==0){
+      alert('you already have  a conversation with this user')
       return
     }else{
       const conversationId = generateUniqueConversationId();
@@ -65,35 +66,54 @@ const createConversations = async (avalibleUser) => {
  
   
  //getting the avalible conversations of our user
-const getConversations=async ()=>{
+ const getConversations = async () => {
   try {
-        // Get reference
-        const conversationsRef = collection(db, 'conversations')
+    const conversationsRef = collection(db, 'conversations');
+    const q = query(conversationsRef, where('participants', 'array-contains', `${uId}`));
+    const querySnap = await getDocs(q);
 
-        // Create a query
-        const q = query(
-          conversationsRef,
-          where('participants',`array-contains`,`${uId}`),
-          limit(10)
-        )
+    const conversationsData = [];
 
-        // Execute query
-        const querySnap = await getDocs(q)
+    for (const doc of querySnap.docs) {
+      // Get the conversation data
+      const conversationData = doc.data();
+      
+     
 
+    // Get the messages subcollection reference for each conversation
+      const messagesRef = collection(doc.ref, 'messages');
 
+      const messagequery=query(messagesRef,orderBy('timeStamp','desc'),limit(1)) 
 
-        querySnap.forEach((doc) => {
-          return conversations.value.push({
-            id: doc.id,
-            data: doc.data(),
-          })
-        })
+      // Perform a query to get all messages within the subcollection
+      const messagesQuerySnap = await getDocs(messagequery);
+      
 
+      // Extract messages data from the query snapshot
+      const messagesData = messagesQuerySnap.docs.map((messageDoc) => {
         
-      } catch (error) {
-        alert(error)
-      }
-}
+        return {
+          id: messageDoc.id,
+          data: messageDoc.data(),
+        };
+        
+      });
+      // Add messages data to the conversation data
+      conversationData.messages = messagesData;
+
+      // Push the updated conversation data to the conversationsData array
+      conversationsData.push({
+        id: doc.id,
+        data: conversationData,
+      });
+    }
+    conversations.value=conversationsData
+    // Now you have all conversation data along with their respective messages in conversationsData array
+  } catch (error) {
+    alert(error);
+  }
+};
+
 getConversations()
 
 
@@ -145,12 +165,15 @@ const userSearch=async (e)=>{
  </span>
 
 
-</div>
+</div >
  <!-- add the last message username and time when it was sent --> 
- <Users v-show="avalibleUsers.length==0"  v-for="conversation in conversations" @click="()=>{
+  <div class="flex direction_row usersContainer">
+    <Users v-show="avalibleUsers.length==0"  v-for="conversation in conversations" @click="()=>{
    router.push(`/chat/:${conversation.id}`)
   
 } " :key="conversation.id" :conversation="conversation" ></Users> 
+
+  </div>
 
  <span class="usernameContainer"  v-if="avalibleUsers.length>0" :key="avalibleUser.id" v-for="avalibleUser in avalibleUsers" >
   <p @click="createConversations(avalibleUser)" class="username" >{{ avalibleUser.data.name }}</p>
@@ -160,6 +183,9 @@ const userSearch=async (e)=>{
 <style scoped>
 .currentUser{
   align-self: center;
+}
+.usersContainer{
+  gap: 20px;
 }
 .usernameContainer{
   padding: 4px;
