@@ -80,7 +80,7 @@
 
         await addDoc(messagesCollectionRef, {
           content: currentMessage.value,
-          sendBy: Auth.currentUser.uid,
+          sendBy: Authenticator.currentUser.uid,
           timeStamp: today,
         });
         
