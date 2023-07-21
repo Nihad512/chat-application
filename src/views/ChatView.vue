@@ -3,26 +3,44 @@
   import { ref, onUnmounted } from 'vue';
   import {
     collection,
-    getDocs,
     addDoc,
     doc,
     query,
     orderBy,
     onSnapshot,
   } from 'firebase/firestore';
+  const loading =ref(true);
+  import Spinner from '../Components/Spinner.vue';
   import { db } from '../firebase/init';
-  import { getAuth } from 'firebase/auth';
+  import { getAuth,onAuthStateChanged } from 'firebase/auth';
   import { useRoute, useRouter } from 'vue-router';
 
   const time = new Date();
   const today = time.toLocaleString();
-  const Auth = getAuth();
+
   const route = useRoute();
   const router = useRouter();
   const conversationId = route.params.id.slice(1);
   const currentMessage = ref('');
   const messages = ref([]);
+  const username=ref('')
+const getUserName = async () => {
+  const Auth = await getAuth();
 
+  // Listen for authentication state changes
+  onAuthStateChanged(Auth, (user) => {
+    if (user) {
+      // User is authenticated, and you can access the displayName
+       username.value = user.displayName;
+      
+    } else {
+      // User is not authenticated, or there is no user
+      console.log('User not authenticated.');
+    }
+  });
+};
+
+getUserName();
   const getMessages = async () => {
     try {
       const conversationDocRef = doc(db, 'conversations', conversationId);
@@ -39,8 +57,9 @@
             timeStamp: data.timeStamp,
           };
         });
+        loading.value=false
       });
-
+       
       // Unsubscribe from the listener when the component is unmounted
       onUnmounted(unsubscribe);
     } catch (error) {
@@ -64,7 +83,7 @@
           sendBy: Auth.currentUser.uid,
           timeStamp: today,
         });
-
+        
         currentMessage.value = '';
       } catch (error) {
         console.error('Error creating message:', error);
@@ -76,12 +95,14 @@
 </script>
 
 <template>
+  <Spinner v-show="loading" />
   <div class="rightSide flex direction_column">
     <div class="rightSideTop">
-      <h3 class="username">Nihad</h3>
+      <h3 class="username">{{ username }}</h3>
       <button @click="router.go(-1);" class="send-button">Previous Page</button>
     </div>
     <div class="messages flex direction_column">
+       
       <MessageItem v-for="message in messages" :key="message.id" :message="message" />
     </div>
     <div class="sendMessageBox flex justify_center align_center justify_between">

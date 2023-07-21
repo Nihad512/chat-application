@@ -2,14 +2,17 @@
 import Users from './Users.vue';
 import { useRoute,useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { collection,query,limit,getDocs, where,doc,setDoc, orderBy } from 'firebase/firestore';
+import { collection,query,limit,getDocs, where,doc,setDoc, orderBy,deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/init'
+import Spinner from '../Components/Spinner.vue'
 const  route=useRoute();
 const router=useRouter()
 const conversations=ref([])
 const uId =route.params.uid;
 const searchName=ref('')
 const avalibleUsers=ref([])
+const loading =ref(true);
+/* add loading tomorrow i am really not in mood rn */
 const generateUniqueConversationId = () => {
   // Generate a timestamp-based ID
   const timestamp = Date.now().toString();
@@ -23,35 +26,17 @@ const generateUniqueConversationId = () => {
 const createConversations = async (avalibleUser) => {
   try {
 
-    /* if the clicked user and the current user already have conversation stop it */
-    /* later on remove this from here and add it to the search area */
-     // Get reference
-     const conversationsRef = collection(db, 'conversations')
-
-    // Create a query
-    const q = query(
-    conversationsRef,
-    where('participants',`array-contains`,`${avalibleUser.id}`),
-    limit(10)
-   )
-    // Execute query
-    const querySnap = await getDocs(q)
-
-    if(querySnap.docs.length!==0){
-      alert('you already have  a conversation with this user')
-      return
-    }else{
       const conversationId = generateUniqueConversationId();
     
     // Create a document named "conversation_id_3"
     const conversationDocRef = doc(db, 'conversations', conversationId);
     // Add the "participants" field to the "conversation_id_3" document
     await setDoc(conversationDocRef, { participants: [uId, avalibleUser.id] });
-  
-
+    
+    
     console.log('Document and field created successfully');
     router.push(`/chat/:${conversationId}`)
-    }
+    
   
     
     
@@ -65,39 +50,40 @@ const createConversations = async (avalibleUser) => {
    
  
   
- //getting the avalible conversations of our user
- const getConversations = async () => {
+const getConversations = async () => {
   try {
     const conversationsRef = collection(db, 'conversations');
-    const q = query(conversationsRef, where('participants', 'array-contains', `${uId}`));
+    const q = query(conversationsRef, where('participants', 'array-contains', uId));
     const querySnap = await getDocs(q);
-
     const conversationsData = [];
 
     for (const doc of querySnap.docs) {
       // Get the conversation data
       const conversationData = doc.data();
-      
-     
 
-    // Get the messages subcollection reference for each conversation
+      // Get the messages subcollection reference for each conversation
       const messagesRef = collection(doc.ref, 'messages');
 
-      const messagequery=query(messagesRef,orderBy('timeStamp','desc'),limit(1)) 
+      const messageQuery = query(messagesRef, orderBy('timeStamp', 'desc'), limit(1));
 
       // Perform a query to get all messages within the subcollection
-      const messagesQuerySnap = await getDocs(messagequery);
-      
+      const messagesQuerySnap = await getDocs(messageQuery);
+
+      // Check if the messages subcollection is empty
+      if (messagesQuerySnap.empty) {
+        // Delete the conversation since it doesn't have any messages
+        await deleteDoc(doc.ref);
+        continue; // Skip processing this conversation since it has been deleted
+      }
 
       // Extract messages data from the query snapshot
       const messagesData = messagesQuerySnap.docs.map((messageDoc) => {
-        
         return {
           id: messageDoc.id,
           data: messageDoc.data(),
         };
-        
       });
+
       // Add messages data to the conversation data
       conversationData.messages = messagesData;
 
@@ -107,23 +93,26 @@ const createConversations = async (avalibleUser) => {
         data: conversationData,
       });
     }
-    conversations.value=conversationsData
+
+    conversations.value = conversationsData;
+    loading.value = false;
     // Now you have all conversation data along with their respective messages in conversationsData array
   } catch (error) {
     alert(error);
   }
 };
 
-getConversations()
+getConversations();
 
 
 //Searching the users
 const userSearch=async (e)=>{
-
+  loading.value=true
   e.preventDefault();
  if(searchName.value==''){
   alert('Please enter a name ')
  }else{
+  
   try {
   const usersRef= collection(db,'users')
   const q=query(
@@ -131,17 +120,29 @@ const userSearch=async (e)=>{
     where('name',`>=`,searchName.value)
   )
   const querySnap=await getDocs(q)
-  querySnap.forEach((doc) => {
+  querySnap.forEach(async(doc) => {
+    const conversationsRef = collection(db, 'conversations');
+    const conv_queryq = query(conversationsRef, where('participants', 'array-contains', `${doc.id}`));
+    const conversation_query = await getDocs(conv_queryq);
+    ;
+    
     if(doc.id==uId){    
       return 
+    }
+    if(conversation_query.docs.length!==0){
+      
+      return
     }else{
       return avalibleUsers.value.push({
             id: doc.id,
             data: doc.data(),
+            
           })
     } 
+    
+    
     });
-
+    loading.value=false
  } catch (error) {
   alert(error)
  }
@@ -152,6 +153,7 @@ const userSearch=async (e)=>{
 </script>
 
 <template >
+  <Spinner v-show="loading" />
 <div class="leftSide flex direction_column">
     <div class="currentUser flex  justify_center align_center justify_between">
  <span class="flex direction_column">
@@ -166,7 +168,6 @@ const userSearch=async (e)=>{
 
 
 </div >
- <!-- add the last message username and time when it was sent --> 
   <div class="flex direction_row usersContainer">
     <Users v-show="avalibleUsers.length==0"  v-for="conversation in conversations" @click="()=>{
    router.push(`/chat/:${conversation.id}`)

@@ -5,7 +5,6 @@ import { ref } from 'vue';
 import { getAuth } from 'firebase/auth';
 const Auth=getAuth()
 const sent=ref(false);
-console.log(Auth.currentUser.uid,message.sentBy);
 if(message.sentBy==Auth.currentUser.uid){
     sent.value=true
 }
@@ -15,8 +14,8 @@ if(message.sentBy==Auth.currentUser.uid){
 <template>
 
 <div :class="`flex messageItem ${sent ? 'sent' :'received'}`">
-        <p class="message">{{ message.message }}</p>
-        <p class="message">{{ message.timeStamp }}</p>
+        <p class="message">{{ message.message }} {{ message.timeStamp.slice(0,-2) }} </p>
+       
     </div>
     
 </template>
