@@ -98,7 +98,7 @@
   <Spinner v-show="loading" />
   <div class="rightSide flex direction_column">
     <div class="rightSideTop">
-      
+      <h3 class="username">{{ username }}</h3>
       <button @click="router.go(-1);" class="send-button">Previous Page</button>
     </div>
     <div class="messages flex direction_column">
