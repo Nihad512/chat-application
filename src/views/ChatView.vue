@@ -17,14 +17,14 @@
 
   const time = new Date();
   const today = time.toLocaleString();
-
+  const Authenticator= getAuth();
   const route = useRoute();
   const router = useRouter();
   const conversationId = route.params.id.slice(1);
   const currentMessage = ref('');
   const messages = ref([]);
   const username=ref('')
-/* const getUserName = async () => {
+ const getUserName = async () => {
   const Auth = await getAuth();
 
   // Listen for authentication state changes
@@ -38,9 +38,9 @@
       console.log('User not authenticated.');
     }
   });
-}; */
+}; 
 
-/* getUserName(); */
+ getUserName();
   const getMessages = async () => {
     try {
       const conversationDocRef = doc(db, 'conversations', conversationId);
