@@ -7,7 +7,7 @@
     doc,
     query,
     orderBy,
-    onSnapshot,
+    onSnapshot
   } from 'firebase/firestore';
   const loading =ref(true);
   import Spinner from '../Components/Spinner.vue';
@@ -32,7 +32,7 @@ const getUserName = async () => {
       
     } else {
       // User is not authenticated, or there is no user
-      console.log('User not authenticated.');
+      alert('User not authenticated.');
     }
   });
 };
@@ -42,7 +42,7 @@ getUserName();
     try {
       const conversationDocRef = doc(db, 'conversations', conversationId);
       const messagesCollectionRef = collection(conversationDocRef, 'messages');
-      const q = query(messagesCollectionRef, orderBy('timeStamp',"desc"));
+      const q = query(messagesCollectionRef, orderBy('timeStamp',"asc"));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         messages.value = snapshot.docs.map((doc) => {
@@ -65,7 +65,8 @@ getUserName();
   };
 
   const messageSender = async () => {
-     const time = new Date();
+    const time = new Date();
+
     if (currentMessage.value === '') {
       alert('Please Write a Message');
     } else {
