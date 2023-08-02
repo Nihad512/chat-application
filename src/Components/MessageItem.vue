@@ -14,7 +14,7 @@ if(message.sentBy==Auth.currentUser.uid){
 <template>
 
 <div :class="`flex messageItem ${sent ? 'sent' :'received'}`">
-        <p class="message">{{ message.message }} {{ message.timeStamp.slice(0,-2) }} </p>
+        <p class="message">{{ message.message }} {{ message.timeStamp }} </p>
        
     </div>
     
