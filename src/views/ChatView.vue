@@ -8,23 +8,23 @@
     query,
     orderBy,
     onSnapshot,
+serverTimestamp,
   } from 'firebase/firestore';
   const loading =ref(true);
   import Spinner from '../Components/Spinner.vue';
   import { db } from '../firebase/init';
   import { getAuth,onAuthStateChanged } from 'firebase/auth';
   import { useRoute, useRouter } from 'vue-router';
-
+  console.log(serverTimestamp());
   const time = new Date();
-  const today = time.toLocaleString();
-  const Authenticator= getAuth();
+  const Authenticator=getAuth()
   const route = useRoute();
   const router = useRouter();
   const conversationId = route.params.id.slice(1);
   const currentMessage = ref('');
   const messages = ref([]);
   const username=ref('')
- const getUserName = async () => {
+const getUserName = async () => {
   const Auth = await getAuth();
 
   // Listen for authentication state changes
@@ -38,14 +38,14 @@
       console.log('User not authenticated.');
     }
   });
-}; 
+};
 
- getUserName();
+getUserName();
   const getMessages = async () => {
     try {
       const conversationDocRef = doc(db, 'conversations', conversationId);
       const messagesCollectionRef = collection(conversationDocRef, 'messages');
-      const q = query(messagesCollectionRef, orderBy('timeStamp'));
+      const q = query(messagesCollectionRef, orderBy('timeStamp',"desc"));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         messages.value = snapshot.docs.map((doc) => {
@@ -81,7 +81,7 @@
         await addDoc(messagesCollectionRef, {
           content: currentMessage.value,
           sendBy: Authenticator.currentUser.uid,
-          timeStamp: today,
+          timeStamp: time.toLocaleString('pl-PL'),
         });
         
         currentMessage.value = '';
