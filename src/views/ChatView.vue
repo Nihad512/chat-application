@@ -8,15 +8,12 @@
     query,
     orderBy,
     onSnapshot,
-serverTimestamp,
   } from 'firebase/firestore';
   const loading =ref(true);
   import Spinner from '../Components/Spinner.vue';
   import { db } from '../firebase/init';
   import { getAuth,onAuthStateChanged } from 'firebase/auth';
   import { useRoute, useRouter } from 'vue-router';
-  console.log(serverTimestamp());
-  const time = new Date();
   const Authenticator=getAuth()
   const route = useRoute();
   const router = useRouter();
@@ -68,6 +65,7 @@ getUserName();
   };
 
   const messageSender = async () => {
+     const time = new Date();
     if (currentMessage.value === '') {
       alert('Please Write a Message');
     } else {
