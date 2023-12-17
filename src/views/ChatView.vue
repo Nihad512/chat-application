@@ -21,23 +21,24 @@
   const currentMessage = ref('');
   const messages = ref([]);
   const username=ref('')
-const getUserName = async () => {
-  const Auth = await getAuth();
 
-  // Listen for authentication state changes
-  onAuthStateChanged(Auth, (user) => {
-    if (user) {
-      // User is authenticated, and you can access the displayName
-       username.value = user.displayName;
-      
-    } else {
-      // User is not authenticated, or there is no user
-      alert('User not authenticated.');
-    }
-  });
-};
+ 
+  const getUserName = async () => {
+    return new Promise((resolve, reject) => {
+      const Auth = getAuth();
 
-getUserName();
+      onAuthStateChanged(Auth, (user) => {
+        if (user) {
+          username.value = user.displayName;
+          resolve();
+        } else {
+          reject('User not authenticated.');
+        }
+      });
+    });
+  };
+
+
   const getMessages = async () => {
     try {
       const conversationDocRef = doc(db, 'conversations', conversationId);
@@ -54,10 +55,11 @@ getUserName();
             sentBy: data.sendBy,
             timeStamp: data.timeStamp,
           };
+          
         });
         loading.value=false
       });
-       
+      
       // Unsubscribe from the listener when the component is unmounted
       onUnmounted(unsubscribe);
     } catch (error) {
@@ -90,8 +92,14 @@ getUserName();
       }
     }
   };
+  const initializeChat = async () => {
+    await getUserName();
+    getMessages();
+  };
 
-  getMessages();
+  // Call the function to initialize the chat
+  initializeChat();
+
 </script>
 
 <template>
