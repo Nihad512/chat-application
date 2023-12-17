@@ -7,6 +7,8 @@
     doc,
     query,
     orderBy,
+    where,
+    getDocs,
     onSnapshot
   } from 'firebase/firestore';
   const loading =ref(true);
@@ -24,19 +26,47 @@
 
  
   const getUserName = async () => {
-    return new Promise((resolve, reject) => {
-      const Auth = getAuth();
+  const Auth = getAuth();
+  const usersRef = collection(db, 'users');
 
-      onAuthStateChanged(Auth, (user) => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(Auth, async (user) => {
+      try {
         if (user) {
-          username.value = user.displayName;
+          // User is authenticated, fetch user document from "users" collection based on UID
+          const userQuery = query(usersRef, where('email', '==', user.email));
+          const userQuerySnap = await getDocs(userQuery);
+
+          if (userQuerySnap.size > 0) {
+            // User document found, get the user's name
+            const userData = userQuerySnap.docs[0].data();
+            username.value = userData.name;
+          } else {
+            // User document not found
+            console.error('User document not found in the "users" collection.');
+          }
+
+          // Resolve the promise
           resolve();
         } else {
-          reject('User not authenticated.');
+          // User is not authenticated
+          console.error('User is not authenticated.');
+          reject(new Error('User is not authenticated.'));
         }
-      });
+      } catch (error) {
+        // Handle any errors
+        console.error('Error fetching user data:', error);
+        reject(error);
+      } finally {
+        // Make sure to unsubscribe from the onAuthStateChanged listener
+        unsubscribe();
+      }
     });
-  };
+  });
+};
+
+
+
 
 
   const getMessages = async () => {
@@ -94,7 +124,7 @@
   };
   const initializeChat = async () => {
     await getUserName();
-    getMessages();
+    await  getMessages();
   };
 
   // Call the function to initialize the chat
