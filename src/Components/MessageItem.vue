@@ -8,7 +8,7 @@ const sent=ref(false);
 if(message.sentBy==Auth.currentUser.uid){
     sent.value=true
 }
-console.log(Auth.currentUser.uid,message.sentBy);    
+console.log(Auth.currentUser.uid,message.sentBy,Auth.currentUser.uid===message.sentBy);    
 </script>
 
 
