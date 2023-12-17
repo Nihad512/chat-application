@@ -47,6 +47,7 @@ getUserName();
       const unsubscribe = onSnapshot(q, (snapshot) => {
         messages.value = snapshot.docs.map((doc) => {
           const data = doc.data();
+          console.log(data.sendBy);
           return {
             id: doc.id,
             message: data.content,
